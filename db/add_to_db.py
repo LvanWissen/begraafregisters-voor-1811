@@ -126,10 +126,8 @@ def addRecords(
             church = None
 
         if record.find('bronverwijzing') is not None:
-            source = get_one_or_create(
-                session, Source, reference=record.find('bronverwijzing').text)
-        else:
-            source = None
+            source = record.find('bronverwijzing').text
+            r.source = source
 
         scan = get_one_or_create(session,
                                  Scan,
