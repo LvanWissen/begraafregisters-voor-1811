@@ -7,3 +7,9 @@ services:
       - 8123:5432
     environment:
       POSTGRES_PASSWORD: example
+      POSTGRES_DB: begraafregisters
+      
+  adminer:
+    image: adminer
+    ports:
+      - 8124:8080
