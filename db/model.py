@@ -4,6 +4,7 @@
 import sqlalchemy
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy import Column, Integer, BigInteger, String, ForeignKey, Unicode, Binary, LargeBinary, Time, DateTime, Date, Text, Boolean, Float, JSON, Enum
 from sqlalchemy.orm import relationship, backref, deferred
 from sqlalchemy.orm import sessionmaker
@@ -14,6 +15,8 @@ Base = declarative_base()
 class Person(Base):
     __tablename__ = "person"
     id = Column('id', Integer, primary_key=True)
+    # name = Column('name', Unicode)
+    name = association_proxy('names', 'literalname')
     gender = Column('gender', Enum('male', 'female', name='genders'))
 
     names = relationship('Personname', secondary='person2personname')
@@ -75,8 +78,11 @@ class Person2person(Base):
                              ForeignKey('relationinfo.id'))
 
     relationinfo = relationship('Relationinfo', foreign_keys=relationinfo_id)
-    person1 = relationship('Person', foreign_keys=p1_id)
-    person2 = relationship('Person', foreign_keys=p2_id)
+
+    person1 = relationship('Person', foreign_keys=p1_id, backref='related_to')
+    person2 = relationship('Person',
+                           foreign_keys=p2_id,
+                           backref='related_from')
 
 
 class Relationinfo(Base):

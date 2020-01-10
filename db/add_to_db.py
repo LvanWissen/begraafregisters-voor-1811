@@ -2,6 +2,7 @@ import gzip
 from lxml import etree
 from datetime import datetime
 import dateutil.parser
+from collections import defaultdict
 
 from sqlalchemy import create_engine
 engine = create_engine(
@@ -17,7 +18,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from model import Base
 Base.metadata.create_all(engine)
 
-from model import Record, Person, Record2person, Personname, Relationinfo, Church, Source, Scan
+from model import Record, Person, Record2person, Personname, Relationinfo, Church, Scan
 """
 DELETE FROM "church" ;
 DELETE FROM "person" ;
@@ -36,27 +37,44 @@ def get_one_or_create(session,
                       model,
                       create_method='',
                       create_method_kwargs=None,
+                      cachedict=None,
                       **kwargs):
     """
     Source: https://stackoverflow.com/a/21146492
     """
+
+    if cachedict is None:
+        cachedict = defaultdict(dict)
+
+    items = frozenset(kwargs.items())
+
     try:
-        return session.query(model).filter_by(**kwargs).one()
+        # try to retrieve from cachedict
+        obj = cachedict[model].get(
+            items,
+            session.query(model).filter_by(**kwargs).one())
+
+        return obj, cachedict
+
     except NoResultFound:
         kwargs.update(create_method_kwargs or {})
         created = getattr(model, create_method, model)(**kwargs)
         try:
             session.add(created)
             session.flush()
-            return created
+            cachedict[model][items] = created  # update cache
+
+            return created, cachedict
         except IntegrityError:
             session.rollback()
-            return session.query(model).filter_by(**kwargs).one()
+            return session.query(model).filter_by(**kwargs).one(), cachedict
 
 
 def addRecords(
         filename='/home/leon/Documents/Golden_Agents/begraafregisters-voor-1811/data/SAA_Index_op_begraafregisters_voor_1811_20190207.xml.gz'
 ):
+
+    cachedict = None
 
     # load file
     if filename.endswith('.gz'):
@@ -65,35 +83,6 @@ def addRecords(
 
     elif filename.endswith('.xml'):
         tree = etree.parse(filename)
-
-    ### Add churches, sources, scans
-
-    # # Add churches
-    # churches = sorted(set(i.text for i in tree.findall("//begraafplaats")))
-    # for church in churches:
-    #     c = Church(name=church)
-    #     session.add(c)
-
-    # # Add sources
-    # sources = sorted(set(i.text for i in tree.findall("//bronverwijzing")))
-    # for source in sources:
-    #     s = Source(reference=source)
-    #     session.add(s)
-
-    # # Add scans
-    # scans = sorted(set(i.text for i in tree.findall("//urlScan")))
-    # for scan in scans:
-    #     s = Scan(url=scan)
-    #     session.add(s)
-
-    # # Add relationinfo
-    # relationinfos = sorted(
-    #     set(i.text for i in tree.findall("//relatieinformatie")))
-    # for relinfo in relationinfos:
-    #     r = Relationinfo(name=relinfo)
-    #     session.add(r)
-
-    # session.commit()
 
     ### Add records
     records = tree.findall("//indexRecord")
@@ -104,6 +93,7 @@ def addRecords(
         if n % 1000 == 0:
             print(f"{n}/{n_total} records", end='\r')
             session.commit()
+            break
 
         if record.find('datumBegrafenis') is not None:
             try:
@@ -119,9 +109,11 @@ def addRecords(
                    date=date)
 
         if record.find('begraafplaats') is not None:
-            church = get_one_or_create(session,
-                                       Church,
-                                       name=record.find('begraafplaats').text)
+            church, cachedict = get_one_or_create(
+                session,
+                Church,
+                cachedict=cachedict,
+                name=record.find('begraafplaats').text)
         else:
             church = None
 
@@ -129,14 +121,16 @@ def addRecords(
             source = record.find('bronverwijzing').text
             r.source = source
 
-        scan = get_one_or_create(session,
-                                 Scan,
-                                 url=record.find('urlScan').text)
+        scan, cachedict = get_one_or_create(session,
+                                            Scan,
+                                            cachedict=cachedict,
+                                            url=record.find('urlScan').text)
 
         if record.find('relatieinformatie') is not None:
-            relationinfo = get_one_or_create(
+            relationinfo, cachedict = get_one_or_create(
                 session,
                 Relationinfo,
+                cachedict=cachedict,
                 name=record.find('relatieinformatie').text)
         else:
             relationinfo = None
@@ -170,13 +164,15 @@ def addRecords(
                 if i is not None
             ])
 
-            pn = get_one_or_create(session,
-                                   Personname,
-                                   givenname=givenName,
-                                   surnameprefix=surnamePrefix,
-                                   basesurname=baseSurname,
-                                   literalname=literalName)
+            pn, cachedict = get_one_or_create(session,
+                                              Personname,
+                                              cachedict=cachedict,
+                                              givenname=givenName,
+                                              surnameprefix=surnamePrefix,
+                                              basesurname=baseSurname,
+                                              literalname=literalName)
 
+            # p = Person(name=literalName)
             p = Person()
             p.names.append(pn)
 
@@ -192,3 +188,8 @@ if __name__ == "__main__":
     session = Session()
 
     addRecords()
+
+    for p in session.query(Person).all():
+        print(p.name)
+
+    session.close()
