@@ -1,6 +1,18 @@
 version: '3.1'
 
 services:
+
+  app:
+    build: ./app
+    environment:
+      APP_DB: begraafregisters
+      APP_USER: postgres
+      APP_PASSWORD: example
+      APP_DBSERVER: db
+      APP_DBPORT: 5432
+      MODULE_NAME: begraafregisters
+
+
   db:
     image: postgres:12-alpine
     ports:
@@ -8,8 +20,13 @@ services:
     environment:
       POSTGRES_PASSWORD: example
       POSTGRES_DB: begraafregisters
-      
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+
   adminer:
     image: adminer
     ports:
       - 8124:8080
+
+volumes:
+  pg-data:
