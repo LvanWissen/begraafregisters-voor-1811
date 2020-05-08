@@ -7,7 +7,7 @@ from begraafregisters import db
 class Person(db.Model):
     __tablename__ = "person"
     id = db.Column('id', db.Integer, primary_key=True)
-    gender = db.Column('gender', db.Enum('male', 'female', name='genders'))
+    gender = db.Column('gender', db.Unicode)
 
     name = association_proxy('names', 'literalname')
 

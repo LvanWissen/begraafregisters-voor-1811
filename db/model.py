@@ -17,7 +17,7 @@ class Person(Base):
     id = Column('id', Integer, primary_key=True)
     # name = Column('name', Unicode)
     name = association_proxy('names', 'literalname')
-    gender = Column('gender', Enum('male', 'female', name='genders'))
+    gender = Column('gender', Unicode)
 
     names = relationship('Personname', secondary='person2personname')
 
