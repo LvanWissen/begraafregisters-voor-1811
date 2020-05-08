@@ -105,6 +105,8 @@ class Church(Base):
 class Scan(Base):
     __tablename__ = "scan"
     id = Column('id', Integer, primary_key=True)
+    name = Column('name', Unicode)
+    uuid = Column('uuid', Unicode)
     url = Column('url', Unicode)
 
 
