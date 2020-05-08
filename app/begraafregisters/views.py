@@ -5,19 +5,55 @@ from flask_admin.contrib.sqla import ModelView
 from begraafregisters import admin, db
 from begraafregisters.models import Record, Person2person, Personname, Person, Relationinfo, Scan, Church
 
+from jinja2 import Markup
 
-class FullViewRecord(ModelView):
+from begraafregisters.utils import getRdf
+
+
+class DefaultView(ModelView):
+    can_create = False
+    can_edit = False
+    can_delete = False
+
+
+class DefaultEditView(ModelView):
+    can_create = True
+    can_edit = True
+    can_delete = True
+
+
+class FullViewRecord(DefaultEditView):
 
     # inline_models = (Church, Scan, Record2person, Relationinfo)
 
+    def _display_scan(view, context, model, name):
+        if not model.scan:
+            return ''
+
+        return Markup(
+            f'<a href="https://images.memorix.nl/ams/download/fullsize/{model.scan.uuid}.jpg" target="_blank" >{model.scan.name}</a>'
+        )
+
+    def _display_turtle(view, context, model, name):
+
+        turtle = getRdf(model, format='turtle')
+
+        return Markup(f'<code>{Markup.escape(turtle)}</code>')
+
+    column_formatters_detail = {'scan': _display_scan, 'rdf': _display_turtle}
+
     column_display_pk = True
     column_display_all_relations = True
-    column_list = ('id', 'inventory', 'church', 'date', 'registered', 'buried',
-                   'relationinfo', 'source', 'scan')
+    column_list = [
+        'id', 'inventory', 'church', 'date', 'buried', 'registered',
+        'relationinfo', 'source', 'scan'
+    ]
+    can_view_details = True
+    column_details_list = column_list + ['rdf']
 
     form_columns = [
-        'id', 'inventory', 'date', 'church', 'scan', 'source', 'registered',
-        'buried', 'relationinfo'
+        'id', 'inventory', 'date', 'church', 'scan', 'source', 'buried',
+        'registered', 'relationinfo'
     ]
     form_widget_args = {'id': {'readonly': True}}
 
@@ -45,7 +81,7 @@ class FullViewRecord(ModelView):
     }
 
 
-class FullViewPerson(ModelView):
+class FullViewPerson(DefaultEditView):
 
     # inline_models = (Personname, )
     inline_models = ((Person2person, {
@@ -84,7 +120,7 @@ class FullViewPerson(ModelView):
     }
 
 
-class FullViewPerson2Person(ModelView):
+class FullViewPerson2Person(DefaultEditView):
     column_display_pk = True
     column_display_all_relations = True
     column_list = ('id', 'person1', 'person2', 'relationinfo')
@@ -105,7 +141,7 @@ class FullViewPerson2Person(ModelView):
     }
 
 
-class FullViewPersonName(ModelView):
+class FullViewPersonName(DefaultEditView):
     column_display_pk = True
     column_display_all_relations = True
     column_list = ('id', 'givenname', 'surnameprefix', 'basesurname',
@@ -114,24 +150,24 @@ class FullViewPersonName(ModelView):
     form_ajax_refs = {'persons': {'fields': ['name'], 'page_size': 10}}
 
 
-class FullViewRelationinfo(ModelView):
+class FullViewRelationinfo(DefaultEditView):
     column_display_pk = True
     column_display_all_relations = True
     column_list = ('id', 'name', 'parent_category')
 
 
-class FullViewScan(ModelView):
+class FullViewScan(DefaultEditView):
     column_display_pk = True
     column_display_all_relations = True
-    column_list = ('id', 'url')
+    column_list = ('id', 'name', 'url', 'uuid')
 
-    form_columns = ['id', 'url']
+    form_columns = ['id', 'name', 'url', 'uuid']
     form_widget_args = {'id': {'readonly': True}}
 
     form_ajax_refs = {'records': {'fields': ['id'], 'page_size': 10}}
 
 
-class FullViewChurch(ModelView):
+class FullViewChurch(DefaultEditView):
     column_display_pk = True
     column_display_all_relations = True
     column_list = ('id', 'name')

@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block head %}
+
+<script type="application/ld+json">
+  {
+    {
+      jsonld | safe
+    }
+  }
+</script>
+
+{% endblock %}
+
+{% block body %}
+
+<h2>{{ model.id }}</h2>
+
+{% block details_table %}
+<table class="table table-hover table-bordered searchable">
+  {% for c in details_columns %}
+  <tr>
+    <td>
+      <b>{{ c }}</b>
+    </td>
+    <td>
+      {{ get_value(model, c) }}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}
+
+<div>
+  <!-- <h3>rdf</h3> -->
+
+  <ul class="nav nav-tabs">
+    <li class="active"><a data-toggle="tab" href="#ttl">ttl</a></li>
+    <li><a data-toggle="tab" href="#jsonld">jsonld</a></li>
+  </ul>
+
+  <div class="tab-content">
+    <div id="ttl" class="tab-pane fade in active">
+
+      <code>{{ turtle }}</code>
+    </div>
+    <div id="jsonld" class="tab-pane fade">
+
+      <code>{{ jsonld }}</code>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block tail %}
+{{ super() }}
+{% endblock %}

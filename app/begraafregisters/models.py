@@ -147,7 +147,9 @@ class Church(db.Model):
 
 class Scan(db.Model):
     __tablename__ = "scan"
-    id = db.Column('id', db.Integer, primary_key=True)
+    id = db.Column('id', db.Unicode, primary_key=True)
+    name = db.Column('name', db.Unicode)
+    uuid = db.Column('uuid', db.Unicode)
     url = db.Column('url', db.Unicode)
 
     def __repr__(self):

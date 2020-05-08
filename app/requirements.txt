@@ -1,0 +1,3 @@
+rdflib
+rdflib-jsonld
+git+https://github.com/LvanWissen/RDFAlchemy.git

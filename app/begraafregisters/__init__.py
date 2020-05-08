@@ -17,7 +17,7 @@ class Config(object):
     # SQLAlchemy config
     SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://{os.environ.get('APP_USER', 'postgres')}:{os.environ.get('APP_PASSWORD', 'example')}@{os.environ.get('APP_DBSERVER', 'localhost')}:{os.environ.get('APP_DBPORT', '8123')}/{os.environ.get('APP_DB', 'begraafregisters')}"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_ECHO = True
+    # SQLALCHEMY_ECHO = True
 
     # Flask-Admin config
     FLASK_ADMIN_SWATCH = 'flatly'
@@ -48,7 +48,12 @@ app.config.from_object(Config)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-admin = Admin(app, name='Begraafregisters', template_mode='bootstrap3')
+admin = Admin(app,
+              name='Begraafregisters',
+              template_mode='bootstrap3',
+              base_template='admin/master.html')
+
 import begraafregisters.views
+import begraafregisters.routes
 
 __exports__ = [app, db, admin]
