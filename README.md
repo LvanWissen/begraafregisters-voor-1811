@@ -12,7 +12,15 @@
 
 Data downloaded from: https://www.amsterdam.nl/stadsarchief/organisatie/open-data/
 
-Transformed into SQL database (Postgres). SQL dump: https://surfdrive.surf.nl/files/index.php/s/RCeLMRMnv4moTat
+### Dump
+```$ docker exec begraafregisters-voor-1811_db_1 pg_dump -U postgres begraafregisters | gzip > begraafregisters.sql.gz```
+
+### Load
+Use a volume mount to load the dump when creating db container: 
+
+```-v path/to/local/begraafregisters.sql.gz:/docker-entrypoint-initdb.d/begraafregisters.sql.gz```
+
+Download dumps: https://surfdrive.surf.nl/files/index.php/s/9cJOMmCOZdLVabp
 
 ## Contact
 
